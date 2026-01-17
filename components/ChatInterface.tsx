@@ -113,7 +113,7 @@ export const ChatInterface: React.FC = () => {
     try {
       const stream = sendMessageStream(
           input, 
-          messages, 
+          messages, // Pass current history so geminiService can restore session if needed
           currentImageInlineData ? { inlineData: currentImageInlineData } : undefined
       );
       
@@ -150,14 +150,22 @@ export const ChatInterface: React.FC = () => {
         )
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
+      
+      let errorMessage = "Xin lỗi, đã có lỗi xảy ra. Vui lòng kiểm tra kết nối hoặc thử lại sau.";
+      
+      // Check for specific API Key errors
+      if (error instanceof Error && (error.message.includes("API Key") || error.message.includes("API_KEY"))) {
+        errorMessage = "⚠️ **Lỗi Cấu Hình**: Chưa tìm thấy API Key.\n\nVui lòng đảm bảo bạn đã thiết lập biến môi trường `API_KEY`.";
+      }
+
       setMessages(prev => [
         ...prev,
         {
           id: Date.now().toString(),
           role: Role.MODEL,
-          text: "Xin lỗi, đã có lỗi xảy ra. Vui lòng kiểm tra kết nối hoặc thử lại sau.",
+          text: errorMessage,
           timestamp: new Date()
         }
       ]);
